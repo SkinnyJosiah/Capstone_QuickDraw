@@ -11,5 +11,5 @@
 4. If the sound queue, "FIRE" was played, then the player that hit the button wins that round.
 5. Players will have a total of 3 lives to "bring suspense" into the game. Once a player drains the opponent's 3 lives, they win the game.
 
-**What if a player presses a button on an incorrect sound queue other than, "Fire" ?
+**What if a player presses a button on an incorrect sound queue other than, "Fire" ?**
 - That player will lose their next turn, unable to press their button on the next sound queue.
