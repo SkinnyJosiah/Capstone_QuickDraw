@@ -16,4 +16,4 @@
 
 [View Initial Project Proposal](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Initial_Proposal.pdf)
 
-[View Status Check 1 - February 29](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Status_Check_I.md)
+[View Status Check 1 - February 29](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Status_Check_1.md)
