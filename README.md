@@ -13,3 +13,7 @@
 
 **What if a player presses a button on an incorrect sound queue other than, "Fire" ?**
 - That player will lose their next turn, unable to press their button on the next sound queue.
+
+[View Initial Project Proposal](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Initial_Proposal.pdf)
+
+[View Status Check 1 - February 29](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Status_Check_I.md)
