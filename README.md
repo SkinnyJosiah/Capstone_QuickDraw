@@ -20,4 +20,8 @@
 
 [View Status Check 1 - February 29](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Status_Check_1.md)
 
+[View Status Check 2 - March 27](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/status_check_2.md)
+
+
+
 ### Project Helpful Links and Such
