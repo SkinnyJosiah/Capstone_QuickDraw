@@ -22,6 +22,6 @@
 
 [View Status Check 2 - March 27](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/status_check_2.md)
 
-
-
 ### Project Helpful Links and Such
+
+[View Workarounds (Useful for blocked resource that may be needed)](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Workarounds.md)
