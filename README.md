@@ -1,5 +1,7 @@
 # Quick Draw! 
 
+### [Original Inspiration](https://www.youtube.com/watch?v=m0CMZ2H_uWk&pp=ygUVMSwyIHN3aXRjaCBxdWljayBkcmF3)
+
 ### Beat your enemies to the queue, but don't jump the gun!
 
 ### **Quick Draw is a game where you follow queues to fire. The game will have different sound queues to throw users off, such as any other word that starts with F.**
