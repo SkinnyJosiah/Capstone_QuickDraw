@@ -6,7 +6,9 @@
 
 # Which parts still need to be ordered/manufactured? 
 
-## The only possible parts we can think of is something to help potentially organize and extend our wiring, and a power on/off switch. Everything else boils down to designing, printing, etc.
+## Speaker(s).
+
+## Otherwise, the only possible parts we can think of is something to help potentially organize and extend our wiring, and a power on/off switch. Everything else boils down to designing, printing, etc.
 
 # You will demonstrate at least two functional elements that work although do not need to be integrated into the larger system.
 
