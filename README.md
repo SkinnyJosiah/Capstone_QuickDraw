@@ -1,6 +1,6 @@
 # Quick Draw! 
 
-![image]()
+![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/title.png)
 
 ### [Original Inspiration](https://www.youtube.com/watch?v=m0CMZ2H_uWk&pp=ygUVMSwyIHN3aXRjaCBxdWljayBkcmF3)
 
