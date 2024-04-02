@@ -12,4 +12,6 @@
 
 # You will demonstrate at least two functional elements that work although do not need to be integrated into the larger system.
 
-## Screen turning on and (you won't believe this) the buttons on a breadboard!!
+## Being able to press the buttons and the Arduino turns on!!
+
+## Just kidding. Out 2 main takeaways from our Sheild-St7735 testing (the model of screen we have) is that we are able to print text and display images.
