@@ -1,6 +1,6 @@
 # Quick Draw! 
 
-![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/title.png)
+![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/title.png)
 
 ### [Original Inspiration](https://www.youtube.com/watch?v=m0CMZ2H_uWk&pp=ygUVMSwyIHN3aXRjaCBxdWljayBkcmF3)
 
@@ -20,7 +20,7 @@
 
 ### Miscellanious Project Resources
 
-[View Initial Project Proposal](https://github.com/SkinnyJosiah/Capstone_QuickDraw/Images/blob/main/Initial_Proposal.pdf)
+[View Initial Project Proposal](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/Initial_Proposal.pdf)
 
 [View Status Check 1 - February 29](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Status%20Checks/Status_Check_1.md)
 
