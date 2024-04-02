@@ -2,7 +2,7 @@
 
 ## We have soldered and set up our TFT-LCD screen for usage. As of now, it is not programmed to do anything but we have the libraries we require for the project. 
 
-## We have also added our current state of [code,](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Arduino%20Code/QuickDraw.ino) our [Shield Test](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Arduino%20Code/ShieldTest.ino) and a [useful page for resources](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Workarounds.md) to use when we need them and that pesky GoGuardian blocks them.
+## We have also added our current state of [code,](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Arduino%20Code/QuickDraw.ino) our [Shield Test](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Arduino%20Code/shieldtest.ino) and a [useful page for resources](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Workarounds.md) to use when we need them and that pesky GoGuardian blocks them.
 
 # Which parts still need to be ordered/manufactured? 
 
