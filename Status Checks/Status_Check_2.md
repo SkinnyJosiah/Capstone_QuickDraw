@@ -6,7 +6,7 @@
 
 # Which parts still need to be ordered/manufactured? 
 
-## Speaker(s), 90 Degree pin headers, power switch.
+## Speaker(s), 90 Degree pin headers.
 
 ## Otherwise, the only possible parts we can think of is something to help potentially organize and extend our wiring. Everything else boils down to designing, printing, etc.
 
