@@ -1,14 +1,25 @@
-//File not foundBMP format not recognized.
-//File not foundFile not foundFile not foundFile not found
+//SD card initialization failed!
+
+//Loading image 'OPTIONQD.bmp'
+//File not found.
+
+//Note: I have a function that reads the files. It does show that OptionQD is in the files.
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 #include <SD.h>
 #include <SPI.h>
 
+#if defined(__SAM3X8E__)
+    #undef __FlashStringHelper::F(string_literal)
+    #define F(string_literal) string_literal
+#endif
+
 // Pin Definitions
+#define SD_CS    4  // Chip select line for SD card
 #define TFT_CS    10  // Chip select line for TFT display
 #define TFT_DC     8  // Data/command line for TFT
+#define TFT_RST  -1  // Reset line for TFT (or connect to +5V)
 #define JOYSTICK   A0 // Analog pin for joystick input
 #define BUTTON_P1  2  // Digital pin for Player 1 button
 #define BUTTON_P2  6  // Digital pin for Player 2 button
@@ -33,6 +44,23 @@ MenuState currentMenu = MENU_START;
 
 void setup() {
   Serial.begin(9600);
+  
+    // Initialize SD card
+  if (!SD.begin(SD_CS)) {
+    Serial.println("SD card initialization failed!");
+    return;
+  }
+  
+  // List all files to ensure SD card is read correctly
+  Serial.println("Files on SD card:");
+  File root = SD.open("/");
+  while (true) {
+    File entry = root.openNextFile();
+    if (!entry) break;
+    Serial.println(entry.name());
+    entry.close();
+  }
+
 
   // Initialize TFT display
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
@@ -51,7 +79,11 @@ void setup() {
 
   // Initialize SD card
   if (!SD.begin()) {
-    Serial.println("SD card initialization failed!");
+    Serial.println("SD card initialized!");
+    return;
+  }
+  else{
+    Serial.println("SD card failed to initialize! SD.Begin has not begun.");
     return;
   }
 
@@ -87,7 +119,7 @@ void loop() {
       // Enter the game
       // Call function to start the game
       // For now, let's just print a message
-      Serial.println("Entering the game...");
+      Serial.println("Entering menu...");
     } else if (currentMenu == MENU_OPTIONS) {
       // Enter options mode
       // Call function to enter options mode
@@ -104,7 +136,9 @@ void displayStartMenu() {
   // Use joystick select button to enter the game or options
   tft.fillScreen(ST7735_BLACK); // Clear screen
   // Load and display PlayQD.bmp from SD card
-  drawBitmap("parrot.bmp", 0, 0);
+  drawBitmap("PlayQD.bmp", 0, 0);
+  
+  Serial.println(" Play Menu Function Initialized.");
 }
 
 void displayOptionsMenu() {
@@ -114,11 +148,15 @@ void displayOptionsMenu() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
   // Load and display OptionQD.bmp from SD card
   drawBitmap("OptionQD.bmp", 0, 0);
+  
+  Serial.println(" Options Menu Function Initialized.");
 }
 
-void drawBitmap(const char *filename, int16_t x, int16_t y) {
+void drawBitmap(const char *filename, int16_t x, uint16_t y) {
+  
   uint8_t sdbuffer[3 * BUFFPIXEL]; // Pixel buffer (R+G+B per pixel)
   uint8_t buffidx = 0; // Current position in sdbuffer
+  
   File bmpFile;
   int bmpWidth, bmpHeight;   // Width and height in pixels
   uint8_t bmpDepth;          // Bit depth (must be 24)
@@ -131,10 +169,15 @@ void drawBitmap(const char *filename, int16_t x, int16_t y) {
   uint32_t pos = 0, startTime = millis();
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
+  
+  Serial.println();
+  Serial.print("Loading image '");
+  Serial.print(filename);
+  Serial.println('\'');
 
   // Open requested file on SD card
   if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print("File not found. Check name and format.");
+    Serial.print("File not found.");
     return;
   }
 
@@ -200,10 +243,10 @@ void drawBitmap(const char *filename, int16_t x, int16_t y) {
   if (!goodBmp) Serial.println("BMP format not recognized.");
 }
 
-
 // These read 16- and 32-bit types from the SD card file.
 // BMP data is stored little-endian, Arduino is little-endian too.
 // May need to reverse subscript order if porting elsewhere.
+
 uint16_t read16(File &f) {
   uint16_t result;
   ((uint8_t *)&result)[0] = f.read(); // LSB
