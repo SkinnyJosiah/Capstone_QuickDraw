@@ -109,7 +109,7 @@ void loop() {
       Serial.println("failed!");
       return;
     }
-    bmpDraw("parrot.bmp", 0, 0); // This is the image that is drawn. Ideally it will be 128x160
+    bmpDraw("OPTQD.bmp", 0, 0); // This is the image that is drawn. Ideally it will be 128x160
     while (1);
   }
   delay(100);
