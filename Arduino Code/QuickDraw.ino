@@ -135,19 +135,7 @@ void drawBitmap(const char *filename, int16_t x, uint16_t y) {
   uint8_t sdbuffer[3 * BUFFPIXEL];
   uint8_t buffidx = 0;
   
-  File bmpFile;
-  int bmpWidth, bmpHeight;
-  uint8_t bmpDepth;
-  uint32_t bmpImageoffset;
-  uint32_t rowSize;
-  boolean goodBmp = false;
-  boolean flip = true;
-  int w, h, row, col;
-  uint8_t r, g, b;
-  uint32_t pos = 0, startTime = millis();
-
-  if ((x >= tft.width()) || (y >= tft.height())) return;
-  
+  File bmpFile = SD.open(filename);
   if (!bmpFile) {
     Serial.print("File not found: ");
     Serial.println(filename);
@@ -159,40 +147,48 @@ void drawBitmap(const char *filename, int16_t x, uint16_t y) {
   Serial.print(filename);
   Serial.println('\'');
 
-  // Open requested file on SD card
-  if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print("File not found.");
-    return;
-  }
-
   // Parse BMP header
   if (read16(bmpFile) == 0x4D42) { // BMP signature
-    bmpImageoffset = read32(bmpFile); // Start of image data
-    bmpWidth = read32(bmpFile);
-    bmpHeight = read32(bmpFile);
+    Serial.println("BMP signature OK");
+
+    uint32_t bmpImageoffset = read32(bmpFile); // Start of image data
+    int bmpWidth = read32(bmpFile);
+    int bmpHeight = read32(bmpFile);
+
+    Serial.print("Image Offset: ");
+    Serial.println(bmpImageoffset);
+    Serial.print("Width: ");
+    Serial.println(bmpWidth);
+    Serial.print("Height: ");
+    Serial.println(bmpHeight);
 
     if (read16(bmpFile) == 1) { // # planes -- must be '1'
-      bmpDepth = read16(bmpFile); // bits per pixel
+      uint8_t bmpDepth = read16(bmpFile); // bits per pixel
+      Serial.print("Bit Depth: ");
+      Serial.println(bmpDepth);
+      
       if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
+        Serial.println("BMP format is 24-bit and uncompressed");
+        
+        boolean goodBmp = true; // Supported BMP format
+        uint32_t rowSize = (bmpWidth * 3 + 3) & ~3; // BMP rows are padded to 4-byte boundary
 
-        goodBmp = true; // Supported BMP format
-        rowSize = (bmpWidth * 3 + 3) & ~3; // BMP rows are padded to 4-byte boundary
-
+        boolean flip = true;
         if (bmpHeight < 0) {
           bmpHeight = -bmpHeight;
           flip = false;
         }
 
-        w = bmpWidth;
-        h = bmpHeight;
+        int w = bmpWidth;
+        int h = bmpHeight;
         if ((x + w - 1) >= tft.width()) w = tft.width() - x;
         if ((y + h - 1) >= tft.height()) h = tft.height() - y;
 
         // Set TFT address window to clipped image bounds
-        tft.setAddrWindow(x, y, x + w, y + h);
+        tft.setAddrWindow(x, y, x + w - 1, y + h - 1);
 
-        for (row = 0; row < h; row++) { // For each scanline...
-
+        for (int row = 0; row < h; row++) { // For each scanline...
+          uint32_t pos;
           if (flip) // Bitmap stored bottom-to-top
             pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
           else     // Bitmap stored top-to-bottom
@@ -200,31 +196,33 @@ void drawBitmap(const char *filename, int16_t x, uint16_t y) {
 
           if (bmpFile.position() != pos) { // Need to seek?
             bmpFile.seek(pos);
-            buffidx = 0; // Force buffer reload
+            buffidx = sizeof(sdbuffer); // Force buffer reload
           }
 
-          for (col = 0; col < w; col++) { // For each pixel...
-            if (buffidx >= sizeof(sdbuffer)) { // Reload pixel data
-              sdbuffer[0] = bmpFile.read();
-              sdbuffer[1] = bmpFile.read();
-              sdbuffer[2] = bmpFile.read();
-              buffidx = 0;
+          for (int col = 0; col < w; col++) { // For each pixel...
+            if (buffidx >= sizeof(sdbuffer)) { // Buffer empty?
+              bmpFile.read(sdbuffer, sizeof(sdbuffer));
+              buffidx = 0; // Set index to beginning
             }
 
-            // Push pixel color to TFT
-            if (tft.getRotation() == 0) {
-              tft.pushColor(tft.color565(sdbuffer[2], sdbuffer[1], sdbuffer[0]));
-            } else {
-              tft.pushColor(tft.color565(sdbuffer[0], sdbuffer[1], sdbuffer[2]));
-            }
+            // Convert pixel from BMP to TFT format
+            uint8_t b = sdbuffer[buffidx++];
+            uint8_t g = sdbuffer[buffidx++];
+            uint8_t r = sdbuffer[buffidx++];
+            tft.pushColor(tft.color565(r, g, b));
           }
         }
+      } else {
+        Serial.println("BMP format not recognized or not 24-bit uncompressed");
       }
+    } else {
+      Serial.println("BMP planes not 1");
     }
+  } else {
+    Serial.println("BMP signature not found");
   }
 
   bmpFile.close();
-  if (!goodBmp) Serial.println("BMP format not recognized.");
 }
 
 // These read 16- and 32-bit types from the SD card file.
