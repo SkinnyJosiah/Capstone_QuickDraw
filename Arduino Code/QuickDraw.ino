@@ -1,28 +1,16 @@
-//SD card initialization failed!
-
-//Loading image 'OPTIONQD.bmp'
-//File not found.
-
-//Note: I have a function that reads the files. It does show that OptionQD is in the files.
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 #include <SD.h>
 #include <SPI.h>
 
-#if defined(__SAM3X8E__)
-    #undef __FlashStringHelper::F(string_literal)
-    #define F(string_literal) string_literal
-#endif
-
 // Pin Definitions
-#define SD_CS    4  // Chip select line for SD card
-#define TFT_CS    10  // Chip select line for TFT display
-#define TFT_DC     8  // Data/command line for TFT
+#define SD_CS    4   // Chip select line for SD card
+#define TFT_CS   10  // Chip select line for TFT display
+#define TFT_DC    8  // Data/command line for TFT
 #define TFT_RST  -1  // Reset line for TFT (or connect to +5V)
-#define JOYSTICK   A0 // Analog pin for joystick input
-#define BUTTON_P1  2  // Digital pin for Player 1 button
-#define BUTTON_P2  6  // Digital pin for Player 2 button
+#define JOYSTICK A0  // Analog pin for joystick input
+#define BUTTON_P1 2  // Digital pin for Player 1 button
+#define BUTTON_P2 6  // Digital pin for Player 2 button
 #define RGB_LED_P1_RED    3  // Digital pin for Player 1 RGB LED (Red)
 #define RGB_LED_P1_GREEN  4  // Digital pin for Player 1 RGB LED (Green)
 #define RGB_LED_P1_BLUE   5  // Digital pin for Player 1 RGB LED (Blue)
@@ -31,7 +19,6 @@
 #define RGB_LED_P2_BLUE   9  // Digital pin for Player 2 RGB LED (Blue)
 #define BUFFPIXEL 20
 
-// Initialize TFT display
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, -1);
 
 // Current menu state
@@ -45,13 +32,13 @@ MenuState currentMenu = MENU_START;
 void setup() {
   Serial.begin(9600);
   
-    // Initialize SD card
+  // Initialize SD card
   if (!SD.begin(SD_CS)) {
     Serial.println("SD card initialization failed!");
     return;
   }
-  
-  // List all files to ensure SD card is read correctly
+
+  // Display available files on SD card
   Serial.println("Files on SD card:");
   File root = SD.open("/");
   while (true) {
@@ -61,6 +48,15 @@ void setup() {
     entry.close();
   }
 
+  // Attempt to open the image file
+  Serial.print("Attempting to open OPTQD.BMP...");
+  File bmpFile = SD.open("OPTQD.BMP");
+  if (!bmpFile) {
+    Serial.println("Failed to open OPTQD.BMP");
+    return;
+  }
+  
+  Serial.println("Successfully opened OPTQD.BMP");
 
   // Initialize TFT display
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
@@ -76,16 +72,6 @@ void setup() {
   pinMode(RGB_LED_P2_RED, OUTPUT);
   pinMode(RGB_LED_P2_GREEN, OUTPUT);
   pinMode(RGB_LED_P2_BLUE, OUTPUT);
-
-  // Initialize SD card
-  if (!SD.begin()) {
-    Serial.println("SD card initialized!");
-    return;
-  }
-  else{
-    Serial.println("SD card failed to initialize! SD.Begin has not begun.");
-    return;
-  }
 
   // Display initial menu
   displayStartMenu();
@@ -117,12 +103,12 @@ void loop() {
     // Joystick button pressed
     if (currentMenu == MENU_START) {
       // Enter the game
-      // Call function to start the game
+      displayStartMenu();
       // For now, let's just print a message
       Serial.println("Entering menu...");
     } else if (currentMenu == MENU_OPTIONS) {
       // Enter options mode
-      // Call function to enter options mode
+      displayOptionsMenu();
       // For now, let's just print a message
       Serial.println("Entering options mode...");
     }
@@ -131,44 +117,42 @@ void loop() {
 }
 
 void displayStartMenu() {
-  // Display PlayQD.bmp on TFT screen
-  // Implement joystick controls to navigate between PlayQD and OptionQD menus
-  // Use joystick select button to enter the game or options
   tft.fillScreen(ST7735_BLACK); // Clear screen
-  // Load and display PlayQD.bmp from SD card
-  drawBitmap("PlayQD.bmp", 0, 0);
-  
+  drawBitmap("PLAYQD.BMP", 0, 0); // Display PLAYQD.bmp
   Serial.println(" Play Menu Function Initialized.");
 }
 
 void displayOptionsMenu() {
-  // Display OptionQD.bmp on TFT screen
-  // Implement joystick controls to navigate between PlayQD and OptionQD menus
-  // Use joystick select button to enter the game or options
   tft.fillScreen(ST7735_BLACK); // Clear screen
-  // Load and display OptionQD.bmp from SD card
-  drawBitmap("OptionQD.bmp", 0, 0);
-  
+  drawBitmap("OPTQD.BMP", 0, 0); // Display OPTQD.bmp
   Serial.println(" Options Menu Function Initialized.");
 }
 
 void drawBitmap(const char *filename, int16_t x, uint16_t y) {
-  
-  uint8_t sdbuffer[3 * BUFFPIXEL]; // Pixel buffer (R+G+B per pixel)
-  uint8_t buffidx = 0; // Current position in sdbuffer
+  Serial.print("Attempting to open file: ");
+  Serial.println(filename);
+
+  uint8_t sdbuffer[3 * BUFFPIXEL];
+  uint8_t buffidx = 0;
   
   File bmpFile;
-  int bmpWidth, bmpHeight;   // Width and height in pixels
-  uint8_t bmpDepth;          // Bit depth (must be 24)
-  uint32_t bmpImageoffset;   // Start of image data in file
-  uint32_t rowSize;          // Not always = bmpWidth; may have padding
-  boolean goodBmp = false;   // Set to true on valid header parse
-  boolean flip = true;       // BMP is stored bottom-to-top
+  int bmpWidth, bmpHeight;
+  uint8_t bmpDepth;
+  uint32_t bmpImageoffset;
+  uint32_t rowSize;
+  boolean goodBmp = false;
+  boolean flip = true;
   int w, h, row, col;
   uint8_t r, g, b;
   uint32_t pos = 0, startTime = millis();
 
   if ((x >= tft.width()) || (y >= tft.height())) return;
+  
+  if (!bmpFile) {
+    Serial.print("File not found: ");
+    Serial.println(filename);
+    return;
+  }
   
   Serial.println();
   Serial.print("Loading image '");
@@ -205,7 +189,7 @@ void drawBitmap(const char *filename, int16_t x, uint16_t y) {
         if ((y + h - 1) >= tft.height()) h = tft.height() - y;
 
         // Set TFT address window to clipped image bounds
-        tft.setAddrWindow(x, y, x + w - 1, y + h - 1);
+        tft.setAddrWindow(x, y, x + w, y + h);
 
         for (row = 0; row < h; row++) { // For each scanline...
 
