@@ -17,7 +17,6 @@ enum JoystickDirection {
     #define F(string_literal) string_literal
 #endif
 
-
 // Pin Definitions
 #define SD_CS    4   // Chip select line for SD card
 #define TFT_CS   10  // Chip select line for TFT display
@@ -39,10 +38,37 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 // Current menu state
 enum MenuState {
   MENU_START,
-  MENU_OPTIONS
+  MENU_OPTIONS_P1,
+  MENU_OPTIONS_P2,
+  MENU_GAME
 };
 
+// Define a new state to represent the "waiting for select" state after displaying options
+enum OptionsState {
+  OPTIONS_DISPLAY,
+  OPTIONS_WAIT_SELECT
+};
+
+OptionsState optionsState = OPTIONS_DISPLAY;
+
+
 MenuState currentMenu = MENU_START;
+
+// Player lives
+int player1Lives = 3;
+int player2Lives = 3;
+
+// RGB LED Colors
+enum LedColor {
+  RED,
+  BLUE,
+  GREEN,
+  PURPLE,
+  YELLOW
+};
+
+LedColor player1Color = RED;
+LedColor player2Color = BLUE;
 
 void setup(void) {
   Serial.begin(9600);
@@ -52,16 +78,6 @@ void setup(void) {
     Serial.println("SD card initialization failed!");
     return;
   }
-
-  // Display available files on SD card
-  //Serial.println("Files on SD card:");
-  //File root = SD.open("/");
-  //while (true) {
-    //File entry = root.openNextFile();
-    //if (!entry) break;
-    //Serial.println(entry.name());
-    //entry.close();
-  //}
 
   // Initialize TFT display
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
@@ -78,6 +94,11 @@ void setup(void) {
   pinMode(RGB_LED_P2_GREEN, OUTPUT);
   pinMode(RGB_LED_P2_BLUE, OUTPUT);
 
+  // Ensure joystick is in neutral state
+  while (readJoystick() != JOYSTICK_NONE) {
+    delay(100); // Wait for joystick to be released
+  }
+
   // Display initial menu
   displayStartMenu();
 }
@@ -85,207 +106,363 @@ void setup(void) {
 // Function to read joystick value
 JoystickDirection readJoystick(void) {
   float a = analogRead(3);
-  
   a *= 5.0;
   a /= 1024.0;
   
-  Serial.print("Joystick read analog = ");
-  Serial.println(a);
   if (a < 0.2) return JOYSTICK_DOWN;
   if (a < 1.0) return JOYSTICK_RIGHT;
   if (a < 1.5) return JOYSTICK_SELECT;
   if (a < 2.0) return JOYSTICK_UP;
   if (a < 3.2) return JOYSTICK_LEFT;
-  else return JOYSTICK_NONE;
+  return JOYSTICK_NONE;
 }
 
-void loop() {
 
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 200; // milliseconds
+
+void loop() {
   JoystickDirection j = readJoystick();
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastDebounceTime > debounceDelay) {
+    switch (currentMenu) {
+      case MENU_START:
+        handleStartMenu(j);
+        break;
+      case MENU_OPTIONS_P1:
+      case MENU_OPTIONS_P2:
+        handleOptionsMenu(j);
+        break;
+      case MENU_GAME:
+        handleGameLogic();
+        break;
+    }
+    lastDebounceTime = currentTime;
+  }
+}
+
+void handleStartMenu(JoystickDirection j) {
   switch (j) {
     case JOYSTICK_UP:
-      if (currentMenu == MENU_OPTIONS) {
-        // Check if joystick is moved down to switch to start menu
-        currentMenu = MENU_START;
-        displayStartMenu();
-        delay(200); // Delay to prevent multiple menu switches
+      // No action needed for up in start menu
+      break;
+    case JOYSTICK_DOWN:
+      currentMenu = MENU_OPTIONS_P1;
+      displayOptionsMenu();
+      delay(200);
+      break;
+    case JOYSTICK_SELECT:
+      currentMenu = MENU_GAME;
+      startGame();
+      delay(200);
+      break;
+    default:
+      break;
+  }
+}
+
+void handleOptionsMenu(JoystickDirection j) {
+  switch (j) {
+    case JOYSTICK_UP:
+      if (currentMenu == MENU_OPTIONS_P2) {
+        currentMenu = MENU_OPTIONS_P1;
+        displayOptionsMenu();
+        delay(200);
       }
       break;
     case JOYSTICK_DOWN:
-       if (currentMenu == MENU_START) {
-        // Check if joystick is moved up to switch to options menu
-        currentMenu = MENU_OPTIONS;
+      if (currentMenu == MENU_OPTIONS_P1) {
+        currentMenu = MENU_OPTIONS_P2;
         displayOptionsMenu();
-        delay(200); // Delay to prevent multiple menu switches
-       }
+        delay(200);
+      }
+      break;
+    case JOYSTICK_LEFT:
+      currentMenu = MENU_START;
+      displayStartMenu();
+      delay(200);
       break;
     case JOYSTICK_SELECT:
-      if (currentMenu == MENU_START) {
-        // Enter the game
-        displayStartMenu();
-        // For now, let's just print a message
-        Serial.println("Entering menu...");
-      } else if (currentMenu == MENU_OPTIONS) {
-        // Enter options mode
-        displayOptionsMenu();
-        // For now, let's just print a message
-        Serial.println("Entering options mode...");
+      // Only transition to the player-specific options menu when select button is pressed
+      if (currentMenu == MENU_OPTIONS_P1 || currentMenu == MENU_OPTIONS_P2) {
+        currentMenu = MENU_GAME;
+        startGame();
+        delay(200);
       }
-      delay(200); // Delay to prevent multiple selections
       break;
     default:
-      // Handle other joystick directions or none
       break;
   }
-  delay(500);
+}
+
+void startGame() {
+  displayLives(); // Display initial lives
+  delay(3000);    // Delay to show initial lives screen for 3 seconds
+  displayStandoff(); // Display standoff screen
+  delay(3000);    // Delay to show standoff screen for 3 seconds before starting the game logic
+  // Start game logic here
+}
+
+void displayStandoff() {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap("STNDOF.BMP", 0, 0); // Display standoffQD.bmp
+}
+
+void resetGame() {
+  // Placeholder for resetting the game state
+  // This function should reset all game-related variables and prepare for a new game
+  
+  // Reset player lives to their initial values
+  player1Lives = 3;
+  player2Lives = 3;
+
+  // Clear any screen displays or visual effects
+  clearScreen();
+  
+  // Display the start menu to allow players to start a new game
+  currentMenu = MENU_START;
+  displayStartMenu();
+}
+
+void checkWinConditions() {
+  // Placeholder for checking win conditions
+  // This function should check if any player has lost all their lives
+  // If so, it should display the appropriate win screen and reset the game
+
+  if (player1Lives <= 0) {
+    // Display player 2 win screen
+    displayWinScreen("P2WinENDQD.BMP");
+    delay(5000); // Delay to display win screen (placeholder)
+    resetGame(); // Placeholder function to reset the game
+  } else if (player2Lives <= 0) {
+    // Display player 1 win screen
+    displayWinScreen("P1WinENDQD.BMP");
+    delay(5000); // Delay to display win screen (placeholder)
+    resetGame(); // Placeholder function to reset the game
+  }
+}
+
+void handleGameLogic() {
+  JoystickDirection j = readJoystick();
+
+  // Placeholder for game logic
+  // Here you can implement the game sequence including sound queues and button press handling
+
+  // For now, let's simulate some game progression
+  delay(2000); // Wait for 2 seconds (placeholder for displaying standoff screen)
+
+  // Display standoff screen
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap("standoffQD.BMP", 0, 0); // Display standoff screen image
+  delay(2000); // Display standoff screen for 2 seconds (placeholder)
+
+  // Simulate game progress by reducing player lives (placeholders)
+  player1Lives--;
+  player2Lives--;
+
+  // Check win conditions and display appropriate screens
+  checkWinConditions();
+
+  // Check for button presses
+  if (digitalRead(BUTTON_P1) == LOW || digitalRead(BUTTON_P2) == LOW) {
+    // Simulate sound queue detection
+    bool correctQueue = true; // For now, assume all queues are correct
+
+    // Check if the button press corresponds to a correct sound queue
+    if (correctQueue) {
+      // Display visuals for correct response
+      // For now, let's just display a black screen to indicate where to fire the gun
+      displayGunFire();
+
+      // Drain a life from the opposing player
+      if (digitalRead(BUTTON_P1) == LOW) {
+        player2Lives--;
+      } else {
+        player1Lives--;
+      }
+    } else {
+      // Display visuals for incorrect response (Parrot image)
+      displayParrot();
+    }
+
+    // Skip next turn for the player who pressed the button
+    delay(2000); // Delay to display visuals
+    clearScreen(); // Clear screen after displaying visuals
+  }
+}
+
+
+void displayGunFire() {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  // Display black screen or gun firing animation
+}
+
+void displayParrot() {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap("PARROT.BMP", 0, 0); // Display Parrot image
+}
+
+void clearScreen() {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+}
+
+void displayWinScreen(const char* filename) {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap(filename, 0, 0); // Display win screen image
+}
+
+void displayScreen(const char* filename) {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap(filename, 0, 0); // Display appropriate screen image
 }
 
 void displayStartMenu() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
   drawBitmap("PLYQD.BMP", 0, 0); // Display PLAYQD.bmp
-  Serial.println(" Play Menu Function Initialized.");
+  Serial.println("Play Menu Function Initialized.");
 }
 
 void displayOptionsMenu() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
-  drawBitmap("OPTQD.BMP", 0, 0); // Display OPTQD.bmp
-  Serial.println(" Options Menu Function Initialized.");
+  if (currentMenu == MENU_OPTIONS_P1) {
+    drawBitmap("P1OPT.BMP", 0, 0); // Display P1OPTIONSQD.bmp
+  } else if (currentMenu == MENU_OPTIONS_P2) {
+    drawBitmap("p2OPT.BMP", 0, 0); // Display P2OPTIONSQD.bmp
+  }
+  Serial.println("Options Menu Function Initialized.");
+}
+
+void displayLives() {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap("LSQD.BMP", 0, 0); // Display LivesStartQD.bmp
+  Serial.println("Lives Displayed.");
+}
+
+void changeLedColor() {
+  if (currentMenu == MENU_OPTIONS_P1) {
+    player1Color = static_cast<LedColor>((player1Color + 1) % 5);
+    setLedColor(RGB_LED_P1_RED, RGB_LED_P1_GREEN, RGB_LED_P1_BLUE, player1Color);
+  } else if (currentMenu == MENU_OPTIONS_P2) {
+    player2Color = static_cast<LedColor>((player2Color + 1) % 5);
+    setLedColor(RGB_LED_P2_RED, RGB_LED_P2_GREEN, RGB_LED_P2_BLUE, player2Color);
+  }
+}
+
+void setLedColor(int redPin, int greenPin, int bluePin, LedColor color) {
+  switch (color) {
+    case RED:
+      analogWrite(redPin, 255);
+      analogWrite(greenPin, 0);
+      analogWrite(bluePin, 0);
+      break;
+    case BLUE:
+      analogWrite(redPin, 0);
+      analogWrite(greenPin, 0);
+      analogWrite(bluePin, 255);
+      break;
+    case GREEN:
+      analogWrite(redPin, 0);
+      analogWrite(greenPin, 255);
+      analogWrite(bluePin, 0);
+      break;
+    case PURPLE:
+      analogWrite(redPin, 255);
+      analogWrite(greenPin, 0);
+      analogWrite(bluePin, 255);
+      break;
+    case YELLOW:
+      analogWrite(redPin, 255);
+      analogWrite(greenPin, 255);
+      analogWrite(bluePin, 0);
+      break;
+  }
 }
 
 void drawBitmap(char *filename, uint16_t x, uint16_t y) {
-
-  //Serial.print("Attempting to open file: ");
-  //Serial.println(filename);
-
-  File     bmpFile;
-  int      bmpWidth, bmpHeight;   // W+H in pixels
-  uint8_t  bmpDepth;              // Bit depth (currently must be 24)
-  uint32_t bmpImageoffset;        // Start of image data in file
-  uint32_t rowSize;               // Not always = bmpWidth; may have padding
-  uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
-  uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
-  boolean  goodBmp = false;       // Set to true on valid header parse
-  boolean  flip    = true;        // BMP is stored bottom-to-top
-  int      w, h, row, col;
-  uint8_t  r, g, b;
+  File bmpFile;
+  int bmpWidth, bmpHeight;
+  uint8_t bmpDepth;
+  uint32_t bmpImageoffset;
+  uint32_t rowSize;
+  uint8_t sdbuffer[3*BUFFPIXEL];
+  uint8_t buffidx = sizeof(sdbuffer);
+  boolean goodBmp = false;
+  boolean flip = true;
+  int w, h, row, col;
+  uint8_t r, g, b;
   uint32_t pos = 0, startTime = millis();
-
-  //filename = "OPTQD.bmp";
   
-  Serial.println();
-  Serial.print("Loading image '");
-  Serial.print(filename);
-  Serial.println('\'');
-
-  // Open requested file on SD card
   if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print("File not found in drawBMP");
+    Serial.print("File not found: ");
+    Serial.println(filename);
     return;
   }
 
-  // Parse BMP header
-  if (read16(bmpFile) == 0x4D42) { // BMP signature
-    Serial.println("BMP signature OK");
-    Serial.print("File size: "); Serial.println(read32(bmpFile));
-    (void)read32(bmpFile); // Read & ignore creator bytes
-    bmpImageoffset = read32(bmpFile); // Start of image data
-
-    Serial.print("Image Offset: ");
-    Serial.println(bmpImageoffset);
-    Serial.print("Header size: "); 
-    Serial.println(read32(bmpFile));
-    
-    bmpWidth = read32(bmpFile);
+  if(read16(bmpFile) == 0x4D42) {
+    read32(bmpFile);
+    read32(bmpFile);
+    bmpImageoffset = read32(bmpFile);
+    read32(bmpFile);
+    bmpWidth  = read32(bmpFile);
     bmpHeight = read32(bmpFile);
-    if (read16(bmpFile) == 1) { // # planes -- must be '1'
-      uint8_t bmpDepth = read16(bmpFile); // bits per pixel
-      Serial.print("Bit Depth: ");
-      Serial.println(bmpDepth);
-      
-      if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
-        Serial.println("BMP format is 24-bit and uncompressed");
-        
-        boolean goodBmp = true; // Supported BMP format
-        Serial.print("Width: ");
-        Serial.println(bmpWidth);
-        Serial.print("Height: ");
-        Serial.println(bmpHeight);
-        
-        rowSize = (bmpWidth * 3 + 3) & ~3; // BMP rows are padded to 4-byte boundary
-
-        if (bmpHeight < 0) {
+    if(read16(bmpFile) == 1) {
+      bmpDepth = read16(bmpFile);
+      if((bmpDepth == 24) && (read32(bmpFile) == 0)) {
+        goodBmp = true;
+        rowSize = (bmpWidth * 3 + 3) & ~3;
+        if(bmpHeight < 0) {
           bmpHeight = -bmpHeight;
-          flip = false;
+          flip      = false;
         }
-
         w = bmpWidth;
         h = bmpHeight;
-        if ((x+w-1) >= tft.width()) w = tft.width() - x;
-        if ((y+h-1) >= tft.height()) h = tft.height() - y;
-
-        // Set TFT address window to clipped image bounds
-        tft.startWrite();
-        tft.setAddrWindow(x, y, w, h);
-
-        for (row = 0; row<h; row++) { // For each scanline...
-          if (flip) // Bitmap stored bottom-to-top
+        if((x+w-1) >= tft.width())  w = tft.width()  - x;
+        if((y+h-1) >= tft.height()) h = tft.height() - y;
+        tft.setAddrWindow(x, y, x+w-1, y+h-1);
+        for (row=0; row<h; row++) {
+          if(flip)
             pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
-          else     // Bitmap stored top-to-bottom
+          else
             pos = bmpImageoffset + row * rowSize;
-
-          if (bmpFile.position() != pos) { // Need to seek?
-            tft.endWrite();
+          if(bmpFile.position() != pos) {
             bmpFile.seek(pos);
-            buffidx = sizeof(sdbuffer); // Force buffer reload
+            buffidx = sizeof(sdbuffer);
           }
-
-          for (col = 0; col<w; col++) { // For each pixel...
-            if (buffidx>=sizeof(sdbuffer)) { // Buffer empty?
-              bmpFile.read(sdbuffer,sizeof(sdbuffer));
-              buffidx=0; // Set index to beginning
-              tft.startWrite();
+          for (col=0; col<w; col++) {
+            if (buffidx >= sizeof(sdbuffer)) {
+              bmpFile.read(sdbuffer, sizeof(sdbuffer));
+              buffidx = 0;
             }
-
-            // Convert pixel from BMP to TFT format
-            b=sdbuffer[buffidx++];
-            g=sdbuffer[buffidx++];
-            r=sdbuffer[buffidx++];
-            tft.pushColor(tft.color565(r,g,b));
+            b = sdbuffer[buffidx++];
+            g = sdbuffer[buffidx++];
+            r = sdbuffer[buffidx++];
+            tft.pushColor(tft.color565(r, g, b));
           }
         }
-        tft.endWrite();
         Serial.print("Loaded in ");
         Serial.print(millis() - startTime);
         Serial.println(" ms");
-      } else {
-        Serial.println("BMP format not recognized or not 24-bit uncompressed");
       }
-    } else {
-      Serial.println("BMP planes not 1");
     }
-  } else {
-    Serial.println("BMP signature not found");
   }
-
+  
   bmpFile.close();
+  if(!goodBmp) Serial.println("BMP format not recognized.");
 }
-
-// These read 16- and 32-bit types from the SD card file.
-// BMP data is stored little-endian, Arduino is little-endian too.
-// May need to reverse subscript order if porting elsewhere.
 
 uint16_t read16(File &f) {
   uint16_t result;
-  ((uint8_t *)&result)[0] = f.read(); // LSB
-  ((uint8_t *)&result)[1] = f.read(); // MSB
+  ((uint8_t *)&result)[0] = f.read();
+  ((uint8_t *)&result)[1] = f.read();
   return result;
 }
 
 uint32_t read32(File &f) {
   uint32_t result;
-  ((uint8_t *)&result)[0] = f.read(); // LSB
+  ((uint8_t *)&result)[0] = f.read();
   ((uint8_t *)&result)[1] = f.read();
   ((uint8_t *)&result)[2] = f.read();
-  ((uint8_t *)&result)[3] = f.read(); // MSB
+  ((uint8_t *)&result)[3] = f.read();
   return result;
 }
