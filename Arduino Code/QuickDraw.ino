@@ -3,6 +3,15 @@
 #include <SD.h>
 #include <SPI.h>
 
+enum JoystickDirection {
+  JOYSTICK_NONE,
+  JOYSTICK_UP,
+  JOYSTICK_DOWN,
+  JOYSTICK_LEFT,
+  JOYSTICK_RIGHT,
+  JOYSTICK_SELECT
+};
+
 #if defined(__SAM3X8E__)
     #undef __FlashStringHelper::F(string_literal)
     #define F(string_literal) string_literal
@@ -73,47 +82,62 @@ void setup(void) {
   displayStartMenu();
 }
 
+// Function to read joystick value
+JoystickDirection readJoystick(void) {
+  float a = analogRead(JOYSTICK);
+  
+  a *= 5.0;
+  a /= 1024.0;
+  
+  Serial.print("Joystick read analog = ");
+  Serial.println(a);
+  if (a < 0.2) return JOYSTICK_DOWN;
+  if (a < 1.0) return JOYSTICK_RIGHT;
+  if (a < 1.5) return JOYSTICK_SELECT;
+  if (a < 2.0) return JOYSTICK_UP;
+  if (a < 3.2) return JOYSTICK_LEFT;
+  else return JOYSTICK_NONE;
+}
+
 void loop() {
 
-  // Check joystick input for menu navigation
-  int joystickValue = analogRead(JOYSTICK);
-
-  Serial.println(joystickValue);
-  delay(500);
-
-  // Move between menus
-  if (currentMenu == MENU_START) {
-    // Check if joystick is moved down to switch to options menu
-    if (joystickValue < 100) {
-      currentMenu = MENU_OPTIONS;
-      displayOptionsMenu();
-      delay(200); // Delay to prevent multiple menu switches
-    }
-  } else if (currentMenu == MENU_OPTIONS) {
+  JoystickDirection j = readJoystick();
+  switch (j) {
+    case JOYSTICK_UP:
+  if (currentMenu == MENU_OPTIONS) {
     // Check if joystick is moved up to switch to start menu
-    if (joystickValue > 900) {
-      currentMenu = MENU_START;
-      displayStartMenu();
-      delay(200); // Delay to prevent multiple menu switches
-    }
+    currentMenu = MENU_START;
+    displayStartMenu();
+    delay(200); // Delay to prevent multiple menu switches
   }
-
-  // Handle selection
-  if (joystickValue < 1000 && joystickValue > 900) {
-    // Joystick button pressed
-    if (currentMenu == MENU_START) {
-      // Enter the game
-      displayStartMenu();
-      // For now, let's just print a message
-      Serial.println("Entering menu...");
-    } else if (currentMenu == MENU_OPTIONS) {
-      // Enter options mode
-      displayOptionsMenu();
-      // For now, let's just print a message
-      Serial.println("Entering options mode...");
-    }
-    delay(200); // Delay to prevent multiple selections
+  break;
+    case JOYSTICK_DOWN:
+      if (currentMenu == MENU_OPTIONS) {
+        // Check if joystick is moved down to switch to start menu
+        currentMenu = MENU_START;
+        displayStartMenu();
+        delay(200); // Delay to prevent multiple menu switches
+      }
+      break;
+    case JOYSTICK_SELECT:
+      if (currentMenu == MENU_START) {
+        // Enter the game
+        displayStartMenu();
+        // For now, let's just print a message
+        Serial.println("Entering menu...");
+      } else if (currentMenu == MENU_OPTIONS) {
+        // Enter options mode
+        displayOptionsMenu();
+        // For now, let's just print a message
+        Serial.println("Entering options mode...");
+      }
+      delay(200); // Delay to prevent multiple selections
+      break;
+    default:
+      // Handle other joystick directions or none
+      break;
   }
+  delay(500);
 }
 
 void displayStartMenu() {
