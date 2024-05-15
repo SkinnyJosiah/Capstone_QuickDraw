@@ -2,9 +2,18 @@
 
 ## Josiah Medina & Gavin Hageman
 
-### Design Summary
+## Design Summary
 
-The project's design is simple and straightforward, using an Adafruit TFT LCD screen to display needed images for the game.
+The project's design is simple and straightforward, using an Adafruit TFT LCD screen (Figure 1) to display needed images for the game. 
+Along with the TFT LCD screen, there are 2 buttons connected to the Arduino to track inputs. (Figure 2)
+
+## Figure 1. AdaFruit TFT LCD Screen w/ Display
+![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/IMG_1937.jpg)
+
+## Figure 2. Buttons w/ Arduino
+
+![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/qddiagram.png)
+
 
 
 
