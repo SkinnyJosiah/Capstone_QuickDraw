@@ -55,28 +55,15 @@ Data storage and retrievel is vital for history of buttons or gameplay to determ
 ### Oh where to start with this...
 
 Lesson 1 and ABSOLUTELY #1... Reaching out to other people is KEY!!! Josiah had the same error for about a whole month and after rendering the code several times, he decided to call his grandpa who works in computer-based fields like cybersecurity. After co-piloting another build of the code with only minor changes, the error that was there for so long, preventing progress as a whole, was now gone! (gavin put entry here)
-
-Lesson 2, 
-
-Lesson 3, working with something new is hard! It takes time to pick up these things. For Josiah, it took almost a month just to get that AdaFruit Shield on the arduino correctly and using the correct libraries. For Gavin, 
+Lesson 2, working with something new is hard! It takes time to pick up these things. For Josiah, it took almost a month just to get that AdaFruit Shield on the arduino correctly and using the correct libraries.
 
 ### Instructions on how to build the QuickDraw project.
 
-(make a video)
+https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/IMG_1944.mov
 
 Take apart project, show shield and breadboards seperately, with LEDS as a disclaimer that you need extra power for these
 
 Simply put on shield, connect buttons / LEDS to pins. Turn on and done.
-
-# TO DO
-
-Detailed wiring diagrams. (work on this, its supa ez)
-
-CAD files for any custom parts and assemblies in stl format. (gavin)
-
-Well-commented code in a file (or multiple files) which are named appropriately with the proper file extensions.  These could be of different file types (i.e. you create a CRONTAB file for your Raspberry Pi which starts a Python script). (done)
-
-Your demonstration video will also be added to the repo to be preserved forever.
 
 # Quick Draw Original Inspiration and Links
 
