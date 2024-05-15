@@ -3,6 +3,12 @@
 #include <SD.h>
 #include <SPI.h>
 
+#if defined(__SAM3X8E__)
+    #undef __FlashStringHelper::F(string_literal)
+    #define F(string_literal) string_literal
+#endif
+
+
 // Pin Definitions
 #define SD_CS    4   // Chip select line for SD card
 #define TFT_CS   10  // Chip select line for TFT display
@@ -119,8 +125,9 @@ void displayOptionsMenu() {
 }
 
 void drawBitmap(char *filename, uint16_t x, uint16_t y) {
-  Serial.print("Attempting to open file: ");
-  Serial.println(filename);
+
+  //Serial.print("Attempting to open file: ");
+  //Serial.println(filename);
 
   File     bmpFile;
   int      bmpWidth, bmpHeight;   // W+H in pixels
@@ -135,18 +142,18 @@ void drawBitmap(char *filename, uint16_t x, uint16_t y) {
   uint8_t  r, g, b;
   uint32_t pos = 0, startTime = millis();
 
-  filename = "OPTQD.bmp";
-  
-  // Open requested file on SD card
-  if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print("File not found");
-    return;
-  }
+  //filename = "OPTQD.bmp";
   
   Serial.println();
   Serial.print("Loading image '");
   Serial.print(filename);
   Serial.println('\'');
+
+  // Open requested file on SD card
+  if ((bmpFile = SD.open(filename)) == NULL) {
+    Serial.print("File not found");
+    return;
+  }
 
   // Parse BMP header
   if (read16(bmpFile) == 0x4D42) { // BMP signature
