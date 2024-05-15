@@ -32,7 +32,7 @@ enum JoystickDirection {
 #define RGB_LED_P2_RED    7  // Digital pin for Player 2 RGB LED (Red)
 #define RGB_LED_P2_GREEN  8  // Digital pin for Player 2 RGB LED (Green)
 #define RGB_LED_P2_BLUE   9  // Digital pin for Player 2 RGB LED (Blue)
-#define BUFFPIXEL 20
+#define BUFFPIXEL 30
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -84,7 +84,7 @@ void setup(void) {
 
 // Function to read joystick value
 JoystickDirection readJoystick(void) {
-  float a = analogRead(JOYSTICK);
+  float a = analogRead(3);
   
   a *= 5.0;
   a /= 1024.0;
@@ -104,20 +104,20 @@ void loop() {
   JoystickDirection j = readJoystick();
   switch (j) {
     case JOYSTICK_UP:
-  if (currentMenu == MENU_OPTIONS) {
-    // Check if joystick is moved up to switch to start menu
-    currentMenu = MENU_START;
-    displayStartMenu();
-    delay(200); // Delay to prevent multiple menu switches
-  }
-  break;
-    case JOYSTICK_DOWN:
       if (currentMenu == MENU_OPTIONS) {
         // Check if joystick is moved down to switch to start menu
         currentMenu = MENU_START;
         displayStartMenu();
         delay(200); // Delay to prevent multiple menu switches
       }
+      break;
+    case JOYSTICK_DOWN:
+       if (currentMenu == MENU_START) {
+        // Check if joystick is moved up to switch to options menu
+        currentMenu = MENU_OPTIONS;
+        displayOptionsMenu();
+        delay(200); // Delay to prevent multiple menu switches
+       }
       break;
     case JOYSTICK_SELECT:
       if (currentMenu == MENU_START) {
