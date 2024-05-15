@@ -35,7 +35,6 @@ enum JoystickDirection {
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-// Current menu state
 enum MenuState {
   MENU_START,
   MENU_OPTIONS_P1,
@@ -43,32 +42,23 @@ enum MenuState {
   MENU_GAME
 };
 
-// Define a new state to represent the "waiting for select" state after displaying options
 enum OptionsState {
   OPTIONS_DISPLAY,
   OPTIONS_WAIT_SELECT
 };
 
 enum GameState {
-  STANDBY,      // Standby state, waiting for game to start
-  STANDOFF,     // Standoff phase before queues start
-  QUEUE_ACTIVE, // Queues are active, players can press buttons
-  COOLDOWN      // Cooldown phase after queues end
+  STANDBY,
+  STANDOFF,
+  QUEUE_ACTIVE,
+  COOLDOWN
 };
 
-GameState currentGameState = STANDBY; // Initialize game state to standby
-
-
+GameState currentGameState = STANDBY;
 OptionsState optionsState = OPTIONS_DISPLAY;
-
-
 MenuState currentMenu = MENU_START;
-
-// Player lives
 int player1Lives = 3;
 int player2Lives = 3;
-
-// RGB LED Colors
 enum LedColor {
   RED,
   BLUE,
@@ -76,14 +66,12 @@ enum LedColor {
   PURPLE,
   YELLOW
 };
-
 LedColor player1Color = RED;
 LedColor player2Color = BLUE;
-
-unsigned long standoffStartTime = 0; // Record the time when standoff started
-const unsigned long STANDOFF_DURATION = 1000; // Standoff duration in milliseconds
-unsigned long cooldownStartTime = 0; // Record the time when cooldown started
-const unsigned long COOLDOWN_DURATION = 2000; // Cooldown duration in milliseconds
+unsigned long standoffStartTime = 0;
+const unsigned long STANDOFF_DURATION = 1000;
+unsigned long cooldownStartTime = 0;
+const unsigned long COOLDOWN_DURATION = 2000;
 
 void setup(void) {
   Serial.begin(9600);
@@ -118,6 +106,7 @@ void setup(void) {
   displayStartMenu();
 }
 
+
 // Function to read joystick value
 JoystickDirection readJoystick(void) {
   float a = analogRead(3);
@@ -143,22 +132,20 @@ void loop() {
   if (currentTime - lastDebounceTime > debounceDelay) {
     switch (currentMenu) {
       case MENU_START:
-        Serial.println("Handling Start Menu...");
         handleStartMenu(j);
         break;
       case MENU_OPTIONS_P1:
       case MENU_OPTIONS_P2:
-        Serial.println("Handling Options Menu...");
         handleOptionsMenu(j);
         break;
       case MENU_GAME:
-        Serial.println("Handling Game Logic...");
         handleGameLogic();
         break;
     }
     lastDebounceTime = currentTime;
   }
 }
+
 
 void handleStartMenu(JoystickDirection j) {
   switch (j) {
@@ -173,6 +160,7 @@ void handleStartMenu(JoystickDirection j) {
     case JOYSTICK_SELECT:
       currentMenu = MENU_GAME;
       startGame();
+      handleGameLogic(); // Add this line to start the game logic
       delay(200);
       break;
     default:
@@ -206,6 +194,7 @@ void handleOptionsMenu(JoystickDirection j) {
       if (currentMenu == MENU_OPTIONS_P1 || currentMenu == MENU_OPTIONS_P2) {
         currentMenu = MENU_GAME;
         startGame();
+        handleGameLogic(); // Add this line to start the game logic
         delay(200);
       }
       break;
