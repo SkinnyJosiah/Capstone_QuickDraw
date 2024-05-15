@@ -78,6 +78,8 @@ Well-commented code in a file (or multiple files) which are named appropriately 
 
 Your demonstration video will also be added to the repo to be preserved forever.
 
+# Quick Draw Original Inspiration and Links
+
 ![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/title.png)
 
 ### [Original Inspiration](https://www.youtube.com/watch?v=m0CMZ2H_uWk&pp=ygUVMSwyIHN3aXRjaCBxdWljayBkcmF3)
