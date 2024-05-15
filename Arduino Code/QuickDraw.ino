@@ -19,7 +19,7 @@
 #define RGB_LED_P2_BLUE   9  // Digital pin for Player 2 RGB LED (Blue)
 #define BUFFPIXEL 20
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, -1);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 // Current menu state
 enum MenuState {
@@ -29,7 +29,7 @@ enum MenuState {
 
 MenuState currentMenu = MENU_START;
 
-void setup() {
+void setup(void) {
   Serial.begin(9600);
   
   // Initialize SD card
@@ -39,24 +39,14 @@ void setup() {
   }
 
   // Display available files on SD card
-  Serial.println("Files on SD card:");
-  File root = SD.open("/");
-  while (true) {
-    File entry = root.openNextFile();
-    if (!entry) break;
-    Serial.println(entry.name());
-    entry.close();
-  }
-
-  // Attempt to open the image file
-  Serial.print("Attempting to open OPTQD.BMP...");
-  File bmpFile = SD.open("OPTQD.BMP");
-  if (!bmpFile) {
-    Serial.println("Failed to open OPTQD.BMP");
-    return;
-  }
-  
-  Serial.println("Successfully opened OPTQD.BMP");
+  //Serial.println("Files on SD card:");
+  //File root = SD.open("/");
+  //while (true) {
+    //File entry = root.openNextFile();
+    //if (!entry) break;
+    //Serial.println(entry.name());
+    //entry.close();
+  //}
 
   // Initialize TFT display
   tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
@@ -118,7 +108,7 @@ void loop() {
 
 void displayStartMenu() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
-  drawBitmap("PLAYQD.BMP", 0, 0); // Display PLAYQD.bmp
+  drawBitmap("PLYQD.BMP", 0, 0); // Display PLAYQD.bmp
   Serial.println(" Play Menu Function Initialized.");
 }
 
@@ -128,17 +118,28 @@ void displayOptionsMenu() {
   Serial.println(" Options Menu Function Initialized.");
 }
 
-void drawBitmap(const char *filename, int16_t x, uint16_t y) {
+void drawBitmap(char *filename, uint16_t x, uint16_t y) {
   Serial.print("Attempting to open file: ");
   Serial.println(filename);
 
-  uint8_t sdbuffer[3 * BUFFPIXEL];
-  uint8_t buffidx = 0;
+  File     bmpFile;
+  int      bmpWidth, bmpHeight;   // W+H in pixels
+  uint8_t  bmpDepth;              // Bit depth (currently must be 24)
+  uint32_t bmpImageoffset;        // Start of image data in file
+  uint32_t rowSize;               // Not always = bmpWidth; may have padding
+  uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
+  uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+  boolean  goodBmp = false;       // Set to true on valid header parse
+  boolean  flip    = true;        // BMP is stored bottom-to-top
+  int      w, h, row, col;
+  uint8_t  r, g, b;
+  uint32_t pos = 0, startTime = millis();
+
+  filename = "OPTQD.bmp";
   
-  File bmpFile = SD.open(filename);
-  if (!bmpFile) {
-    Serial.print("File not found: ");
-    Serial.println(filename);
+  // Open requested file on SD card
+  if ((bmpFile = SD.open(filename)) == NULL) {
+    Serial.print("File not found");
     return;
   }
   
