@@ -74,8 +74,12 @@ void setup(void) {
 }
 
 void loop() {
+
   // Check joystick input for menu navigation
   int joystickValue = analogRead(JOYSTICK);
+
+  Serial.println(joystickValue);
+  delay(500);
 
   // Move between menus
   if (currentMenu == MENU_START) {
