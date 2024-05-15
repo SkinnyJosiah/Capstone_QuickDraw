@@ -49,6 +49,16 @@ enum OptionsState {
   OPTIONS_WAIT_SELECT
 };
 
+enum GameState {
+  STANDBY,      // Standby state, waiting for game to start
+  STANDOFF,     // Standoff phase before queues start
+  QUEUE_ACTIVE, // Queues are active, players can press buttons
+  COOLDOWN      // Cooldown phase after queues end
+};
+
+GameState currentGameState = STANDBY; // Initialize game state to standby
+
+
 OptionsState optionsState = OPTIONS_DISPLAY;
 
 
@@ -69,6 +79,11 @@ enum LedColor {
 
 LedColor player1Color = RED;
 LedColor player2Color = BLUE;
+
+unsigned long standoffStartTime = 0; // Record the time when standoff started
+const unsigned long STANDOFF_DURATION = 1000; // Standoff duration in milliseconds
+unsigned long cooldownStartTime = 0; // Record the time when cooldown started
+const unsigned long COOLDOWN_DURATION = 2000; // Cooldown duration in milliseconds
 
 void setup(void) {
   Serial.begin(9600);
@@ -128,13 +143,16 @@ void loop() {
   if (currentTime - lastDebounceTime > debounceDelay) {
     switch (currentMenu) {
       case MENU_START:
+        Serial.println("Handling Start Menu...");
         handleStartMenu(j);
         break;
       case MENU_OPTIONS_P1:
       case MENU_OPTIONS_P2:
+        Serial.println("Handling Options Menu...");
         handleOptionsMenu(j);
         break;
       case MENU_GAME:
+        Serial.println("Handling Game Logic...");
         handleGameLogic();
         break;
     }
@@ -198,11 +216,16 @@ void handleOptionsMenu(JoystickDirection j) {
 
 void startGame() {
   displayLives(); // Display initial lives
-  delay(3000);    // Delay to show initial lives screen for 3 seconds
-  displayStandoff(); // Display standoff screen
-  delay(3000);    // Delay to show standoff screen for 3 seconds before starting the game logic
-  // Start game logic here
+  delay(1000); // Wait for a few seconds before transitioning to the standoff screen
+  displayStandoff(); // Transition to the standoff screen
+  
+  // Transition to standoff phase
+  currentGameState = STANDOFF;
+  standoffStartTime = millis(); // Record the time when standoff started
+  
+  // No need for a loop to wait for standoff to complete
 }
+
 
 void displayStandoff() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
@@ -226,72 +249,88 @@ void resetGame() {
 }
 
 void checkWinConditions() {
-  // Placeholder for checking win conditions
-  // This function should check if any player has lost all their lives
-  // If so, it should display the appropriate win screen and reset the game
-
   if (player1Lives <= 0) {
-    // Display player 2 win screen
-    displayWinScreen("P2WinENDQD.BMP");
+    displayWinScreen("P2WinENDQD"); // Player 2 wins
     delay(5000); // Delay to display win screen (placeholder)
-    resetGame(); // Placeholder function to reset the game
+    resetGame(); // Reset the game
   } else if (player2Lives <= 0) {
-    // Display player 1 win screen
-    displayWinScreen("P1WinENDQD.BMP");
+    displayWinScreen("P1WinENDQD"); // Player 1 wins
     delay(5000); // Delay to display win screen (placeholder)
-    resetGame(); // Placeholder function to reset the game
+    resetGame(); // Reset the game
   }
 }
 
-void handleGameLogic() {
-  JoystickDirection j = readJoystick();
-
-  // Placeholder for game logic
-  // Here you can implement the game sequence including sound queues and button press handling
-
-  // For now, let's simulate some game progression
-  delay(2000); // Wait for 2 seconds (placeholder for displaying standoff screen)
-
-  // Display standoff screen
+void displayBlackScreen(int duration) {
   tft.fillScreen(ST7735_BLACK); // Clear screen
-  drawBitmap("standoffQD.BMP", 0, 0); // Display standoff screen image
-  delay(2000); // Display standoff screen for 2 seconds (placeholder)
+  delay(duration); // Wait for the specified duration
+}
 
-  // Simulate game progress by reducing player lives (placeholders)
-  player1Lives--;
-  player2Lives--;
+void handleGameLogic() {
+  Serial.println("Inside handleGameLogic()...");
+  
+  switch (currentGameState) {
+    case STANDBY:
+      // No action needed while in standby state
+      break;
+    case STANDOFF:
+      // No button presses allowed during standoff
+      // Check if standoff phase is complete
+      if (millis() - standoffStartTime >= STANDOFF_DURATION) {
+        currentGameState = QUEUE_ACTIVE; // Transition to active queue phase
+      }
+      break;
+    case QUEUE_ACTIVE:
+      // Handle button presses during active queue phase
+      handleButtonPresses();
+      break;
+    case COOLDOWN:
+      // No action needed during cooldown phase
+      // Check if cooldown phase is complete
+      if (millis() - cooldownStartTime >= COOLDOWN_DURATION) {
+        currentGameState = STANDOFF; // Transition back to standoff phase
+        standoffStartTime = millis(); // Reset standoff start time
+      }
+      break;
+  }
+}
 
-  // Check win conditions and display appropriate screens
-  checkWinConditions();
-
-  // Check for button presses
+void handleButtonPresses() {
   if (digitalRead(BUTTON_P1) == LOW || digitalRead(BUTTON_P2) == LOW) {
+    Serial.println("Button pressed detected...");
     // Simulate sound queue detection
     bool correctQueue = true; // For now, assume all queues are correct
 
     // Check if the button press corresponds to a correct sound queue
     if (correctQueue) {
+      Serial.println("Correct queue detected...");
       // Display visuals for correct response
-      // For now, let's just display a black screen to indicate where to fire the gun
       displayGunFire();
-
+      
       // Drain a life from the opposing player
       if (digitalRead(BUTTON_P1) == LOW) {
-        player2Lives--;
+        updateLives("1LLP1.BMP"); // Player 1 pressed button, Player 2 loses a life
       } else {
-        player1Lives--;
+        updateLives("1LLP2.BMP"); // Player 2 pressed button, Player 1 loses a life
       }
-    } else {
-      // Display visuals for incorrect response (Parrot image)
-      displayParrot();
-    }
 
-    // Skip next turn for the player who pressed the button
-    delay(2000); // Delay to display visuals
-    clearScreen(); // Clear screen after displaying visuals
+      // Skip next turn for the player who pressed the button
+      delay(2000); // Delay to display visuals
+      clearScreen(); // Clear screen after displaying visuals
+      // Transition to cooldown phase after a correct queue
+      currentGameState = COOLDOWN;
+      cooldownStartTime = millis(); // Record cooldown start time
+    } else {
+      // Handle incorrect response
+      // Display visuals for incorrect response
+      displayParrot();
+      
+      // Skip next turn for the player who pressed the button
+      delay(2000); // Delay to display visuals
+      clearScreen(); // Clear screen after displaying visuals
+      // No transition to cooldown phase after an incorrect queue
+    }
   }
 }
-
 
 void displayGunFire() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
@@ -335,9 +374,32 @@ void displayOptionsMenu() {
 
 void displayLives() {
   tft.fillScreen(ST7735_BLACK); // Clear screen
+  Serial.println("Displaying lives...");
   drawBitmap("LSQD.BMP", 0, 0); // Display LivesStartQD.bmp
-  Serial.println("Lives Displayed.");
+  Serial.println("Lives displayed.");
+  delay(2000); // Wait for 2 seconds
+  clearScreen(); // Clear the screen
 }
+
+void updateLives(const char* filename) {
+  tft.fillScreen(ST7735_BLACK); // Clear screen
+  drawBitmap(filename, 0, 0); // Display appropriate screen image
+  
+  // Update player lives based on filename
+  if (strcmp(filename, "1LLP1.BMP") == 0 || strcmp(filename, "2LLP1.BMP") == 0 || strcmp(filename, "3LLP1.BMP") == 0) {
+    player2Lives--; // Player 1 loses a life
+  } else if (strcmp(filename, "1LLP2.BMP") == 0 || strcmp(filename, "2LLP2.BMP") == 0 || strcmp(filename, "3LLP2.BMP") == 0) {
+    player1Lives--; // Player 2 loses a life
+  }
+  
+  // Check win conditions after updating lives
+  checkWinConditions();
+  
+  // Start cooldown phase after updating lives
+  currentGameState = COOLDOWN;
+  cooldownStartTime = millis(); // Record cooldown start time
+}
+
 
 void changeLedColor() {
   if (currentMenu == MENU_OPTIONS_P1) {
