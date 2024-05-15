@@ -151,7 +151,7 @@ void drawBitmap(char *filename, uint16_t x, uint16_t y) {
 
   // Open requested file on SD card
   if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print("File not found");
+    Serial.print("File not found in drawBMP");
     return;
   }
 
