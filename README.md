@@ -61,7 +61,7 @@ Lesson 2, working with something new is hard! It takes time to pick up these thi
 
 https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/IMG_1944.mov
 
-Take apart project, show shield and breadboards seperately, with LEDS as a disclaimer that you need extra power for these
+Take apart project, shield and breadboards seperately, with LEDS, you need extra power.
 
 Simply put on shield, connect buttons / LEDS to pins. Turn on and done.
 
