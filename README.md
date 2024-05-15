@@ -1,5 +1,19 @@
 # Quick Draw! 
 
+## Josiah Medina & Gavin Hageman
+
+### Design Summary
+
+The project's design is simple and straightforward, using an Adafruit TFT LCD screen to display needed images for the game.
+
+
+
+
+
+
+
+
+
 ![image](https://github.com/SkinnyJosiah/Capstone_QuickDraw/blob/main/Images/title.png)
 
 ### [Original Inspiration](https://www.youtube.com/watch?v=m0CMZ2H_uWk&pp=ygUVMSwyIHN3aXRjaCBxdWljayBkcmF3)
